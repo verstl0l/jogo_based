@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Fighter - Desenho com Física</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', cursive, monospace;
+            background: #1a1a2e;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #0f3460;
+            border: 4px solid #00ff88;
+            border-radius: 0;
+            box-shadow: 0 0 0 4px #000;
+        }
+        
+        h1 {
+            color: #00ff88;
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-shadow: 3px 3px 0 #000;
+        }
+        
+        .subtitle {
+            color: #a5b1c2;
+            font-size: 10px;
+        }
+        
+        .game-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .game-screen {
+            flex: 3;
+            background: #0a1931;
+            border: 4px solid #0099ff;
+            padding: 8px;
+            position: relative;
+            box-shadow: 0 0 0 4px #000;
+        }
+        
+        #pixelCanvas {
+            background: #162447;
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .pixel-ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        
+        .pixel-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid;
+            padding: 8px;
+            min-width: 160px;
+            font-size: 9px;
+        }
+        
+        #player1-panel {
+            border-color: #ff3366;
+        }
+        
+        #player2-panel {
+            border-color: #0099ff;
+            text-align: right;
+        }
+        
+        .pixel-health {
+            margin: 5px 0;
+            height: 12px;
+            background: #000;
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+        
+        .pixel-health-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        #player1-health {
+            background: #ff0000;
+            width: 100%;
+        }
+        
+        #player2-health {
+            background: #0066ff;
+            width: 100%;
+        }
+        
+        .pixel-score {
+            color: #ffcc00;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .controls-panel {
+            flex: 1;
+            background: #0a1931;
+            border: 4px solid #ff3366;
+            padding: 12px;
+            box-shadow: 0 0 0 4px #000;
+        }
+        
+        .pixel-title {
+            color: #00ff88;
+            font-size: 12px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #00ff88;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .drawing-controls {
+            margin: 15px 0;
+        }
+        
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            margin: 10px 0;
+        }
+        
+        .pixel-color {
+            width: 24px;
+            height: 24px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .pixel-color.active {
+            border-color: #fff;
+            transform: scale(1.1);
+            box-shadow: 0 0 8px #fff;
+        }
+        
+        .brush-control {
+            margin: 15px 0;
+        }
+        
+        .brush-control label {
+            display: block;
+            font-size: 8px;
+            margin-bottom: 4px;
+            color: #00ff88;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin: 15px 0;
+        }
+        
+        .pixel-action {
+            padding: 8px;
+            border: 3px solid #000;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        #attack-btn {
+            background: #ff3366;
+            color: white;
+        }
+        
+        #platform-btn {
+            background: #0099ff;
+            color: white;
+        }
+        
+        #clear-btn {
+            background: #666;
+            color: white;
+            grid-column: span 2;
+        }
+        
+        .pixel-action:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+        
+        .pixel-action:active {
+            transform: translateY(1px);
+        }
+        
+        .pixel-controls {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border: 3px solid #ffcc00;
+            margin-top: 15px;
+        }
+        
+        .control-list {
+            font-size: 8px;
+            line-height: 1.6;
+        }
+        
+        .control-key {
+            display: inline-block;
+            background: #333;
+            padding: 2px 6px;
+            margin: 2px;
+            border: 2px solid #555;
+            font-family: monospace;
+        }
+        
+        .game-info {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border: 3px solid #00ff88;
+            margin-top: 15px;
+            font-size: 8px;
+        }
+        
+        .info-text {
+            margin: 5px 0;
+            color: #a5b1c2;
+        }
+        
+        .pixel-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            border: 4px solid #ffcc00;
+            padding: 20px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 0 0 8px rgba(0,0,0,0.8);
+            min-width: 300px;
+        }
+        
+        .message-title {
+            color: #ffcc00;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+            
+            #pixelCanvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+        
+        /* Fonte Pixel */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PIXEL FIGHTER</h1>
+            <p class="subtitle">DESENHE E USE A FÍSICA!</p>
+        </header>
+        
+        <div class="game-container">
+            <div class="game-screen">
+                <canvas id="pixelCanvas" width="640" height="480"></canvas>
+                
+                <div class="pixel-ui">
+                    <div class="pixel-panel" id="player1-panel">
+                        <div>JOGADOR 1</div>
+                        <div class="pixel-health">
+                            <div class="pixel-health-fill" id="player1-health"></div>
+                        </div>
+                        <div class="pixel-score" id="player1-score">PONTOS: 000</div>
+                    </div>
+                    
+                    <div class="pixel-panel" id="player2-panel">
+                        <div>JOGADOR 2</div>
+                        <div class="pixel-health">
+                            <div class="pixel-health-fill" id="player2-health"></div>
+                        </div>
+                        <div class="pixel-score" id="player2-score">PONTOS: 000</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-panel">
+                <div class="drawing-controls">
+                    <div class="pixel-title">🎨 DESENHO LIVRE</div>
+                    
+                    <div class="color-palette">
+                        <div class="pixel-color active" style="background: #ff0000;" onclick="setColor('#ff0000')"></div>
+                        <div class="pixel-color" style="background: #0000ff;" onclick="setColor('#0000ff')"></div>
+                        <div class="pixel-color" style="background: #00ff00;" onclick="setColor('#00ff00')"></div>
+                        <div class="pixel-color" style="background: #ffff00;" onclick="setColor('#ffff00')"></div>
+                        <div class="pixel-color" style="background: #ff00ff;" onclick="setColor('#ff00ff')"></div>
+                        <div class="pixel-color" style="background: #00ffff;" onclick="setColor('#00ffff')"></div>
+                        <div class="pixel-color" style="background: #ffffff;" onclick="setColor('#ffffff')"></div>
+                        <div class="pixel-color" style="background: #000000;" onclick="setColor('#000000')"></div>
+                    </div>
+                    
+                    <div class="brush-control">
+                        <label>TAMANHO DO PINCEL: <span id="brushSizeValue">4</span>px</label>
+                        <input type="range" id="brushSize" min="1" max="16" value="4" style="width: 100%;">
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="pixel-action" id="attack-btn" onclick="activateDrawing()">
+                            ⚔️ ATIVAR
+                        </button>
+                        <button class="pixel-action" id="platform-btn" onclick="createPlatform()">
+                            🛡️ PLATAFORMA
+                        </button>
+                        <button class="pixel-action" id="clear-btn" onclick="clearDrawings()">
+                            🗑️ LIMPAR
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="pixel-controls">
+                    <div class="pixel-title">🎮 CONTROLES</div>
+                    <div class="control-list">
+                        <div><span class="control-key">← →</span> MOVER</div>
+                        <div><span class="control-key">↑</span> PULAR</div>
+                        <div><span class="control-key">↓</span> AGACHAR</div>
+                        <div><span class="control-key">ESPAÇO</span> ATIVAR DESENHO</div>
+                        <div><span class="control-key">SHIFT</span> CORRER</div>
+                        <div><span class="control-key">C</span> LIMPAR TUDO</div>
+                    </div>
+                </div>
+                
+                <div class="game-info">
+                    <div class="pixel-title">💡 COMO JOGAR</div>
+                    <div class="info-text">
+                        1. CLIQUE E ARRASTE PARA DESENHAR
+                    </div>
+                    <div class="info-text">
+                        2. SEUS DESENHOS TEM FÍSICA
+                    </div>
+                    <div class="info-text">
+                        3. USE ESPAÇO PARA EMPURRÁ-LOS
+                    </div>
+                    <div class="info-text">
+                        4. CRIE PLATAFORMAS PARA PULAR
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="pixel-message" id="gameMessage">
+        <div class="message-title" id="messageTitle">VITÓRIA!</div>
+        <p id="messageText" style="margin: 10px 0; font-size: 10px;">JOGADOR 1 VENCEU!</p>
+        <button onclick="hideMessage()" style="margin-top: 15px; padding: 8px 20px; background: #0099ff; color: white; border: 3px solid #000; font-family: 'Press Start 2P', cursive; font-size: 8px; cursor: pointer;">
+            CONTINUAR
+        </button>
+    </div>
+
+    <script src="game_simple.js"></script>
+</body>
+</html>
